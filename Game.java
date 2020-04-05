@@ -93,8 +93,7 @@ public class Game extends JPanel implements Runnable {
         }
         if (chainPuyo.size() >= 4) {
             System.out.println(chainPuyo);
-            // change this later!!!!!!
-            gainScore = this.curChain * chainPuyo.size();
+            gainScore = 1000 * (int) Math.pow(2, this.curChain - 1) + 100 * (chainPuyo.size() - 4);
             for (Point puyo : chainPuyo) {
                 this.board[puyo.y][puyo.x] = -1;
             }
