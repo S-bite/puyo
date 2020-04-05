@@ -9,7 +9,7 @@ public class Game extends JPanel implements Runnable {
     final int width = 6;
     final int size = 30;
     final Color[] colors = { Color.red, Color.blue, Color.green, Color.black };
-    final int puyoNum = 1000;
+    final int puyoNum = 10;
     Boolean canControl;
     Boolean isGameOver;
     int[][] board;
@@ -101,6 +101,10 @@ public class Game extends JPanel implements Runnable {
         return gainScore;
     }
 
+    public void getMovefromStream() {
+
+    }
+
     public void getKeyInput() {
         if (Key.isPress[KeyEvent.VK_RIGHT]) {
             this.putPosition++;
@@ -140,6 +144,7 @@ public class Game extends JPanel implements Runnable {
         else
             this.curChain = 1;
         this.canControl = !isChange;
+        this.isGameOver = this.canControl == true && this.nextPuyoIndex == this.puyoNum;
         return isChange;
     }
 
@@ -154,8 +159,10 @@ public class Game extends JPanel implements Runnable {
                 g.fillOval(j * this.size, i * this.size, this.size, this.size);
             }
         }
-        g.setColor(this.colors[this.puyoList.get(this.nextPuyoIndex)]);
-        g.fillOval(this.size * this.putPosition, 0, this.size, this.size);
+        if (this.nextPuyoIndex != this.puyoNum) {
+            g.setColor(this.colors[this.puyoList.get(this.nextPuyoIndex)]);
+            g.fillOval(this.size * this.putPosition, 0, this.size, this.size);
+        }
         g.setColor(Color.BLACK);
         g.drawRect(this.size * this.putPosition, 0, this.size, this.size);
         g.drawString("Score : " + this.score, 30 * this.width + 30, 30);
@@ -169,12 +176,12 @@ public class Game extends JPanel implements Runnable {
     public void run() {
 
         while (!this.isGameOver) {
-            long start = System.currentTimeMillis();
+            // long start = System.currentTimeMillis();
             this.getKeyInput();
             this.updateGameState();
             // this.paintComponent(this.getGraphics());
-            long end = System.currentTimeMillis();
-            System.out.println((end - start) + "ms");
+            // long end = System.currentTimeMillis();
+            // System.out.println((end - start) + "ms");
             this.repaint();
             Toolkit.getDefaultToolkit().sync();
             try {
