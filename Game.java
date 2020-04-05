@@ -1,6 +1,7 @@
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import javax.swing.*;
-
 import java.util.*;
 
 public class Game extends JPanel implements Runnable {
@@ -8,12 +9,16 @@ public class Game extends JPanel implements Runnable {
     final int width = 6;
     final int size = 30;
     final Color[] colors = { Color.red, Color.blue, Color.green, Color.black };
+    final int puyoNum = 1000;
     Boolean canControl;
     Boolean isGameOver;
     int[][] board;
     int score;
-    int curChain = 0;
+    int curChain;
+    int putPosition;
     private Thread gameLoop;
+    ArrayList<Integer> puyoList;
+    int nextPuyoIndex;
 
     Game() {
         super();
@@ -21,10 +26,19 @@ public class Game extends JPanel implements Runnable {
         this.score = 0;
         this.canControl = true;
         this.isGameOver = false;
+        this.curChain = 0;
+        this.putPosition = 0;
+        this.nextPuyoIndex = 0;
+        this.puyoList = new ArrayList<>();
+
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < this.width; j++) {
                 this.board[i][j] = -1;
             }
+        }
+        Random random = new Random();
+        for (int i = 0; i < this.puyoNum; i++) {
+            this.puyoList.add(random.nextInt(4));
         }
         gameLoop = new Thread(this);
         gameLoop.start();
@@ -44,10 +58,12 @@ public class Game extends JPanel implements Runnable {
         return isSettle;
     }
 
-    public void putPuyo(int x, int color) {
+    public void putPuyo() {
         if (this.canControl == false)
             return;
-        this.board[0][x] = color;
+
+        this.board[0][this.putPosition] = this.puyoList.get(this.nextPuyoIndex);
+        this.nextPuyoIndex++;
         this.canControl = false;
     }
 
@@ -86,6 +102,22 @@ public class Game extends JPanel implements Runnable {
         return gainScore;
     }
 
+    public void getKeyInput() {
+        if (Key.isPress[KeyEvent.VK_RIGHT]) {
+            this.putPosition++;
+            if (this.putPosition >= this.width)
+                this.putPosition = this.width - 1;
+        }
+        if (Key.isPress[KeyEvent.VK_LEFT]) {
+            this.putPosition--;
+            if (this.putPosition < 0)
+                this.putPosition = 0;
+        }
+        if (Key.isPress[KeyEvent.VK_DOWN]) {
+            this.putPuyo();
+        }
+    }
+
     public Boolean updateGameState() {
         if (this.applyGravityAndCheckIsSettle() == false) {
             this.canControl = false;
@@ -114,33 +146,44 @@ public class Game extends JPanel implements Runnable {
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.setColor(Color.WHITE);
-        g.drawLine(0, 0, 100, 50);
-        g.drawOval(50, 50, 100, 100);
-        g.fillOval(100, 75, 50, 50);
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < this.width; j++) {
                 if (this.board[i][j] == -1)
                     continue;
                 Color color = this.colors[this.board[i][j]];
                 g.setColor(color);
-                g.fillOval(j * this.size, i * this.size, 30, 30);
+                g.fillOval(j * this.size, i * this.size, this.size, this.size);
             }
+        }
+        g.setColor(this.colors[this.puyoList.get(this.nextPuyoIndex)]);
+        g.fillOval(this.size * this.putPosition, 0, this.size, this.size);
+        g.setColor(Color.BLACK);
+        g.drawRect(this.size * this.putPosition, 0, this.size, this.size);
+        g.drawString("Score : " + this.score, 30 * this.width + 30, 30);
+        for (int i = 0; i < 4 && this.nextPuyoIndex + i < this.puyoNum; i++) {
+            Color color = this.colors[this.puyoList.get(this.nextPuyoIndex + i)];
+            g.setColor(color);
+            g.fillOval(180, i * this.size, this.size, this.size);
         }
     }
 
     public void run() {
-        while (true) {
+
+        while (!this.isGameOver) {
             long start = System.currentTimeMillis();
+            this.getKeyInput();
             this.updateGameState();
             // this.paintComponent(this.getGraphics());
             long end = System.currentTimeMillis();
             System.out.println((end - start) + "ms");
+            this.repaint();
+            Toolkit.getDefaultToolkit().sync();
             try {
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
         }
     }
 
