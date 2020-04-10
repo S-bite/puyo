@@ -9,18 +9,21 @@ public class Game extends JPanel implements Runnable {
     final int width = 6;
     final int size = 30;
     final Color[] colors = { Color.red, Color.blue, Color.green, Color.black };
-    final int puyoNum = 10;
+    final int puyoNum = 100;
     Boolean canControl;
     Boolean isGameOver;
+    Boolean isUsingKeyboard;
     int[][] board;
     int score;
     int curChain;
     int putPosition;
     private Thread gameLoop;
     ArrayList<Integer> puyoList;
+    ArrayList<Integer> moveList;
+
     int nextPuyoIndex;
 
-    Game() {
+    Game(Boolean isUsingKeyboard) {
         super();
         this.board = new int[this.height][this.width];
         this.score = 0;
@@ -30,6 +33,7 @@ public class Game extends JPanel implements Runnable {
         this.putPosition = 0;
         this.nextPuyoIndex = 0;
         this.puyoList = new ArrayList<>();
+        this.isUsingKeyboard = isUsingKeyboard;
 
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < this.width; j++) {
@@ -61,8 +65,11 @@ public class Game extends JPanel implements Runnable {
     public void putPuyo() {
         if (this.canControl == false)
             return;
-
-        this.board[0][this.putPosition] = this.puyoList.get(this.nextPuyoIndex);
+        if (this.isUsingKeyboard) {
+            this.board[0][this.putPosition] = this.puyoList.get(this.nextPuyoIndex);
+        } else {
+            this.board[0][this.moveList.get(this.nextPuyoIndex)] = this.puyoList.get(this.nextPuyoIndex);
+        }
         this.nextPuyoIndex++;
         this.canControl = false;
     }
@@ -105,18 +112,23 @@ public class Game extends JPanel implements Runnable {
 
     }
 
-    public void getKeyInput() {
-        if (Key.isPress[KeyEvent.VK_RIGHT]) {
-            this.putPosition++;
-            if (this.putPosition >= this.width)
-                this.putPosition = this.width - 1;
-        }
-        if (Key.isPress[KeyEvent.VK_LEFT]) {
-            this.putPosition--;
-            if (this.putPosition < 0)
-                this.putPosition = 0;
-        }
-        if (Key.isPress[KeyEvent.VK_DOWN]) {
+    public void move() {
+        if (this.isUsingKeyboard) {
+
+            if (Key.isPress[KeyEvent.VK_RIGHT]) {
+                this.putPosition++;
+                if (this.putPosition >= this.width)
+                    this.putPosition = this.width - 1;
+            }
+            if (Key.isPress[KeyEvent.VK_LEFT]) {
+                this.putPosition--;
+                if (this.putPosition < 0)
+                    this.putPosition = 0;
+            }
+            if (Key.isPress[KeyEvent.VK_DOWN]) {
+                this.putPuyo();
+            }
+        } else {
             this.putPuyo();
         }
     }
@@ -150,6 +162,9 @@ public class Game extends JPanel implements Runnable {
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        g.setColor(Color.BLACK);
+        g.drawString("Score : " + this.score, 30 * this.width + 30, 30);
+        g.drawRect(0, 0, this.width * this.size, this.height * this.size);
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < this.width; j++) {
                 if (this.board[i][j] == -1)
@@ -159,12 +174,15 @@ public class Game extends JPanel implements Runnable {
                 g.fillOval(j * this.size, i * this.size, this.size, this.size);
             }
         }
-        if (this.nextPuyoIndex != this.puyoNum) {
-            g.setColor(this.colors[this.puyoList.get(this.nextPuyoIndex)]);
-            g.fillOval(this.size * this.putPosition, 0, this.size, this.size);
+        if (this.isUsingKeyboard) {
+            if (this.nextPuyoIndex != this.puyoNum) {
+                g.setColor(this.colors[this.puyoList.get(this.nextPuyoIndex)]);
+                g.fillOval(this.size * this.putPosition, 0, this.size, this.size);
+            }
+            g.setColor(Color.BLACK);
+            g.drawRect(this.size * this.putPosition, 0, this.size, this.size);
         }
         g.setColor(Color.BLACK);
-        g.drawRect(this.size * this.putPosition, 0, this.size, this.size);
         g.drawString("Score : " + this.score, 30 * this.width + 30, 30);
         for (int i = 0; i < 4 && this.nextPuyoIndex + i < this.puyoNum; i++) {
             Color color = this.colors[this.puyoList.get(this.nextPuyoIndex + i)];
@@ -173,11 +191,30 @@ public class Game extends JPanel implements Runnable {
         }
     }
 
-    public void run() {
+    public void getMove() {
+        System.out.println("" + this.puyoNum + " " + this.height + " " + this.width);
+        for (int puyo : this.puyoList) {
+            System.out.println(puyo);
+        }
+        Scanner scan = new Scanner(System.in);
+        this.moveList = new ArrayList<>();
+        System.err.println("scan");
 
+        for (int i = 0; i < this.puyoNum; i++) {
+            int move = scan.nextInt();
+            System.err.println("" + i + " " + move);
+            moveList.add(move);
+        }
+        scan.close();
+    }
+
+    public void run() {
+        if (this.isUsingKeyboard == false)
+            this.getMove();
+        System.out.println(this.moveList);
         while (!this.isGameOver) {
             // long start = System.currentTimeMillis();
-            this.getKeyInput();
+            this.move();
             this.updateGameState();
             // this.paintComponent(this.getGraphics());
             // long end = System.currentTimeMillis();
